@@ -133,7 +133,9 @@ outcomes = {
     'final',
     'completed',
     'recovered',
-    'cancelled'
+    'cancelled',
+    'finalized',
+    'finalised'
   ],
   'ongoing' => [
     'ongoing',
@@ -158,6 +160,9 @@ CSV($stdout) do |csv|
     documents = Hash.new
     document_dates = Hash.new
     number_of_documents = 0
+    feed.items.each_with_index do |item, index|
+      puts "#{index} #{item.title}"
+    end
     feed.items.each_with_index do |item, index|
       item.description.sanitize.downcase.gsub(/[^\w ]/, '').split.each do |term|
         terms[term] ||= Hash.new 0
@@ -185,7 +190,19 @@ CSV($stdout) do |csv|
         vectors[document] << terms[feature][document] * Math.log(number_of_documents/documents[feature].size)
       end
     end
-    ap vectors
+    # find the nearest neighbour of each document
+    vectors.each do |d1, v1|
+      min_distance = nil
+      min_document = nil
+      vectors.each do |d2, v2|
+        next if d1.eql? d2
+        distance = Math.sqrt(v1.zip(v2).map { |v_1, v_2| (v_1 - v_2) ** 2 }.reduce(0, :+))
+        next if min_distance and distance > min_distance
+        min_distance = distance
+        min_document = d2
+      end
+      puts "#{d1} #{min_document} #{min_distance}"
+    end
     exit
     feed.items.each do |item|
       words = item.title.downcase.gsub(/[^\w ]/, '').split
