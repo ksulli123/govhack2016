@@ -7,6 +7,7 @@ require 'awesome_print'
 require 'json'
 require 'csv'
 require 'chronic'
+require 'sanitize'
 
 # mashup of: https://stackoverflow.com/questions/4868969/implementing-a-simple-trie-for-efficient-levenshtein-distance-calculation-java
 # and https://stackoverflow.com/questions/20012873/fast-fuzzy-approximate-search-in-dictionary-of-strings-in-ruby
@@ -97,6 +98,25 @@ class Trie
   end
 end
 
+class String
+  def sanitize
+    Sanitize.clean self
+  end
+end
+
+def max_total_score_from(words, indexes)
+  # initially attempt to work out the status based on the title
+  max_scores = {}
+  indexes.each do |id, index|
+    scores = words.map { |query| index.get query }
+    total_score = scores.reduce(0) do |accumulator, results|
+      accumulator + results.reduce(0) { |acc, result| acc + result.score } if not results.nil?
+    end
+    max_scores[id] = total_score
+  end
+  max_scores.max_by { |k, v| v }
+end
+
 # read in the suburb database, partition by number of words and create an index
 # for each partition
 suburbs = open('suburbs.csv').readlines.map { |l| l.downcase.strip }
@@ -110,7 +130,17 @@ outcomes = {
   'located' => [
     'located',
     'found',
-    'final'
+    'final',
+    'completed',
+    'recovered',
+    'cancelled'
+  ],
+  'ongoing' => [
+    'ongoing',
+    'continuing',
+    'in progress',
+    'progressing',
+    'developing'
   ]
 }
 outcome_indexes = outcomes.each_with_object({}) do |(outcome, synonyms), h|
@@ -120,9 +150,43 @@ outcome_indexes = outcomes.each_with_object({}) do |(outcome, synonyms), h|
 end
 
 CSV($stdout) do |csv|
-  csv << ['title', 'suburb', 'published_at', 'categories', 'outcome', 'text']
+  csv << ['title', 'suburb', 'published_at', 'outcome', 'categories', 'text']
   open('rss.xml') do |rss|
     feed = RSS::Parser.parse(rss)
+    # calculate the term frequencies, the document frequencies
+    terms = Hash.new
+    documents = Hash.new
+    document_dates = Hash.new
+    number_of_documents = 0
+    feed.items.each_with_index do |item, index|
+      item.description.sanitize.downcase.gsub(/[^\w ]/, '').split.each do |term|
+        terms[term] ||= Hash.new 0
+        terms[term][index] += 1
+        documents[term] ||= Set.new
+        documents[term] << index
+      end
+      number_of_documents = index
+      document_dates[index] = item.pubDate
+    end
+    # extract the features as the terms that have a positive tfidf for at least one document
+    features = Set.new
+    terms.each do |term, docs|
+      docs.each do |doc, count|
+        tfidf = count * Math.log(number_of_documents/documents[term].size)
+        features << term if tfidf > 0
+      end
+    end
+    # for each document create a feature vector that we can cluster using
+    vectors = Hash.new
+    document_dates.each do |document, date|
+      vectors[document] = []
+      vectors[document] << date
+      features.each do |feature|
+        vectors[document] << terms[feature][document] * Math.log(number_of_documents/documents[feature].size)
+      end
+    end
+    ap vectors
+    exit
     feed.items.each do |item|
       words = item.title.downcase.gsub(/[^\w ]/, '').split
       suburb_results = []
@@ -134,22 +198,15 @@ CSV($stdout) do |csv|
         end
       end
       suburb = suburb_results.max_by { |result| result.score }.word
-
-      # TODO: work out how to guess the outcome of a report based on keywords without
-      # going all the way and doing machine learning. just add up the scores per outcome
-      # and default to ongoing if we can't be confident it is a located. what are the
-      # outcomes? located and on-going?
-      best_outcome = Result.new('Unknown', Integer::MAX)
-      outcome_indexes.each do |k, v|
-        words.each do |query|
-          result = outcome_indexes[k].get query
-          best_outcome = result if result.score > best_outcome.score
-        end
+      # attempt to determine the outcome from the title
+      outcome = max_total_score_from words, outcome_indexes
+      if not (outcome and outcome.last > 0)
+        # if we couldn't, then try the article text
+        outcome = max_total_score_from item.description.sanitize.downcase.gsub(/[^\w ]/, '').split, outcome_indexes
       end
-
+      outcome = nil if outcome.last.eql? 0
       categories = item.categories.map { |c| c.content }.to_json
-      outcome = 'Unknown'
-      csv << [item.title, suburb, item.pubDate, categories, outcome, item.description ]
+      csv << [item.title, suburb, item.pubDate, (outcome ? outcome.first : 'unknown'), categories, item.description]
     end
   end
 end
