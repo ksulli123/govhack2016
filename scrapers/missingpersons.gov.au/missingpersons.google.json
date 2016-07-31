@@ -1,0 +1,103 @@
+{
+  "licenseType": "Unknown",
+  "dc:description": "Imported at Thu Oct 29 21:04:30 PDT 2015 from \\\\NWTBHSUSV02v\\redirect$\\mccormacko\\Desktop\\Missing persons spreadsheets\\Compiled lists modified location4.xlsx.",
+  "exportable": true,
+  "dc:title": "\\\\NWTBHSUSV02v\\redirect$\\mccormacko\\Desktop\\Missing persons spreadsheets\\Compiled lists modified location4",
+  "attribution": "The Courier Mail",
+  "attributionLink": "www.couriermail.com.au",
+  "dc:modified": "2015-10-30T04:12:20Z",
+  "dc:identifier": "1R2hE5j1tS0P-qfxK3EqvUdaBuCkrO_oDEbSUEphc",
+  "tableSchema": {"columns": [
+    {
+      "datatype": "string",
+      "formatPattern": "<img src='%s' height='120'/>",
+      "name": "col0",
+      "validateData": false,
+      "title": "Image link:"
+    },
+    {
+      "datatype": "string",
+      "name": "col1",
+      "validateData": false,
+      "title": "First name"
+    },
+    {
+      "datatype": "string",
+      "name": "col2",
+      "validateData": false,
+      "title": "Last name"
+    },
+    {
+      "datatype": "location",
+      "name": "col3",
+      "validateData": false,
+      "title": "Location"
+    },
+    {
+      "datatype": "date",
+      "name": "col4",
+      "validateData": false,
+      "title": "Last seen:"
+    },
+    {
+      "datatype": "double",
+      "name": "col5",
+      "validateData": false,
+      "title": "Bucket list"
+    },
+    {
+      "datatype": "string",
+      "name": "col6",
+      "validateData": false,
+      "title": "Jurisdiction:"
+    },
+    {
+      "datatype": "date",
+      "name": "col7",
+      "validateData": false,
+      "title": "Year of birth:"
+    },
+    {
+      "datatype": "string",
+      "name": "col8",
+      "validateData": false,
+      "title": "Height:"
+    },
+    {
+      "datatype": "string",
+      "name": "col9",
+      "validateData": false,
+      "title": "Build:"
+    },
+    {
+      "datatype": "string",
+      "name": "col10",
+      "validateData": false,
+      "title": "Eye Colour:"
+    },
+    {
+      "datatype": "string",
+      "name": "col11",
+      "validateData": false,
+      "title": "Hair colour"
+    },
+    {
+      "datatype": "string",
+      "name": "col12",
+      "validateData": false,
+      "title": "Complexion:"
+    },
+    {
+      "datatype": "string",
+      "name": "col13",
+      "validateData": false,
+      "title": "Gender:"
+    },
+    {
+      "datatype": "string",
+      "name": "col14",
+      "validateData": false,
+      "title": "Information:"
+    }
+  ]}
+}
